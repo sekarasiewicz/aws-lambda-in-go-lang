@@ -2,7 +2,6 @@ package main
 
 import (
 	"aws-lambda-in-go-lang/pkg/handlers"
-	"log"
 	"os"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -23,7 +22,6 @@ func main() {
 		Region: aws.String(region)},
 	)
 	if err != nil {
-		log.Println("AWS session could not be created")
 		return
 	}
 	dynaClient = dynamodb.New(awsSession)
@@ -33,7 +31,6 @@ func main() {
 const tableName = "LambdaInGoUser"
 
 func handler(req events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
-	log.Printf("REQ: %+v", req)
 	switch req.HTTPMethod {
 	case "GET":
 		return handlers.GetUser(req, tableName, dynaClient)

@@ -3,8 +3,6 @@ package user
 import (
 	"encoding/json"
 	"errors"
-	"log"
-
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -42,7 +40,6 @@ func FetchUser(email, tableName string, dynaClient dynamodbiface.DynamoDBAPI) (*
 
 	result, err := dynaClient.GetItem(input)
 	if err != nil {
-		log.Println(err.Error())
 		return nil, errors.New(ErrorFailedToFetchRecord)
 
 	}
@@ -50,7 +47,6 @@ func FetchUser(email, tableName string, dynaClient dynamodbiface.DynamoDBAPI) (*
 	item := User{}
 	err = dynamodbattribute.UnmarshalMap(result.Item, &item)
 	if err != nil {
-		log.Printf("Failed to unmarshal Record, %v", err)
 		return nil, errors.New(ErrorFailedToUnmarshalRecord)
 	}
 	return &item, nil
@@ -80,15 +76,13 @@ func CreateUser(req events.APIGatewayProxyRequest, tableName string, dynaClient 
 	}
 	// Check if user exists
 	currentUser, _ := FetchUser(u.Email, tableName, dynaClient)
-	log.Println("currentUser: ", currentUser)
-	if len(currentUser.Email) != 0 {
+	if currentUser != nil && len(currentUser.Email) != 0 {
 		return nil, errors.New(ErrorUserAlreadyExists)
 	}
 	// Save user
 
 	av, err := dynamodbattribute.MarshalMap(u)
 	if err != nil {
-		log.Println("Could not marshal item: ", err.Error())
 		return nil, errors.New(ErrorCouldNotMarshalItem)
 	}
 
@@ -99,7 +93,6 @@ func CreateUser(req events.APIGatewayProxyRequest, tableName string, dynaClient 
 
 	_, err = dynaClient.PutItem(input)
 	if err != nil {
-		log.Println("Dynamo Put Item Error: ", err.Error())
 		return nil, errors.New(ErrorCouldNotDynamoPutItem)
 	}
 	return &u, nil
@@ -111,21 +104,18 @@ func UpdateUser(req events.APIGatewayProxyRequest, tableName string, dynaClient 
 ) {
 	var u User
 	if err := json.Unmarshal([]byte(req.Body), &u); err != nil {
-		log.Printf("Invalid json format: %v", err.Error())
 		return nil, errors.New(ErrorInvalidEmail)
 	}
 
 	// Check if user exists
 	currentUser, _ := FetchUser(u.Email, tableName, dynaClient)
-	log.Println("Update Current user.User", currentUser)
-	if len(currentUser.Email) == 0 {
+	if currentUser != nil && len(currentUser.Email) == 0 {
 		return nil, errors.New(ErrorUserDoesNotExists)
 	}
 
 	// Save user
 	av, err := dynamodbattribute.MarshalMap(u)
 	if err != nil {
-		log.Println("Could not marshal item: ", err.Error())
 		return nil, errors.New(ErrorCouldNotMarshalItem)
 	}
 
@@ -153,7 +143,6 @@ func DeleteUser(req events.APIGatewayProxyRequest, tableName string, dynaClient 
 	}
 	_, err := dynaClient.DeleteItem(input)
 	if err != nil {
-		log.Println("Could not remove item ", err.Error())
 		return errors.New(ErrorCouldNotDeleteItem)
 	}
 

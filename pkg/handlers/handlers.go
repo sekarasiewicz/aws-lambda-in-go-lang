@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"aws-lambda-in-go-lang/pkg/user"
-	"log"
 	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -38,7 +37,6 @@ func GetUser(req events.APIGatewayProxyRequest, tableName string, dynaClient dyn
 			aws.String(err.Error()),
 		})
 	}
-	log.Printf("%+v", result)
 	return apiResponse(http.StatusOK, result)
 }
 
@@ -52,7 +50,6 @@ func CreateUser(req events.APIGatewayProxyRequest, tableName string, dynaClient 
 			aws.String(err.Error()),
 		})
 	}
-	log.Printf("%+v", result)
 	return apiResponse(http.StatusCreated, result)
 }
 
@@ -66,7 +63,6 @@ func UpdateUser(req events.APIGatewayProxyRequest, tableName string, dynaClient 
 			aws.String(err.Error()),
 		})
 	}
-	log.Printf("%+v", result)
 	return apiResponse(http.StatusOK, result)
 }
 
