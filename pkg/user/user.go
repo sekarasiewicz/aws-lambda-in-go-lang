@@ -3,6 +3,9 @@ package user
 import (
 	"encoding/json"
 	"errors"
+
+	"aws-lambda-in-go-lang/pkg/validators"
+
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -44,15 +47,15 @@ func FetchUser(email, tableName string, dynaClient dynamodbiface.DynamoDBAPI) (*
 
 	}
 
-	item := User{}
-	err = dynamodbattribute.UnmarshalMap(result.Item, &item)
+	item := new(User)
+	err = dynamodbattribute.UnmarshalMap(result.Item, item)
 	if err != nil {
 		return nil, errors.New(ErrorFailedToUnmarshalRecord)
 	}
-	return &item, nil
+	return item, nil
 }
 
-func FetchUsers(tableName string, dynaClient dynamodbiface.DynamoDBAPI) (*dynamodb.ScanOutput, error) {
+func FetchUsers(tableName string, dynaClient dynamodbiface.DynamoDBAPI) (*[]User, error) {
 	input := &dynamodb.ScanInput{
 		TableName: aws.String(tableName),
 	}
@@ -60,7 +63,9 @@ func FetchUsers(tableName string, dynaClient dynamodbiface.DynamoDBAPI) (*dynamo
 	if err != nil {
 		return nil, errors.New(ErrorFailedToFetchRecord)
 	}
-	return result, nil
+	item := new([]User)
+	err = dynamodbattribute.UnmarshalListOfMaps(result.Items, item)
+	return item, nil
 }
 
 func CreateUser(req events.APIGatewayProxyRequest, tableName string, dynaClient dynamodbiface.DynamoDBAPI) (
@@ -71,7 +76,7 @@ func CreateUser(req events.APIGatewayProxyRequest, tableName string, dynaClient 
 	if err := json.Unmarshal([]byte(req.Body), &u); err != nil {
 		return nil, errors.New(ErrorInvalidUserData)
 	}
-	if !isEmailValid(u.Email) {
+	if !validators.IsEmailValid(u.Email) {
 		return nil, errors.New(ErrorInvalidEmail)
 	}
 	// Check if user exists
